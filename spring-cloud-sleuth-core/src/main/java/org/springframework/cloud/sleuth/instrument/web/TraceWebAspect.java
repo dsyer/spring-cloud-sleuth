@@ -74,16 +74,35 @@ public class TraceWebAspect {
 	private static final Log log = org.apache.commons.logging.LogFactory
 			.getLog(TraceWebAspect.class);
 
-	private final Tracer tracer;
-	private final SpanNamer spanNamer;
-	private final TraceKeys traceKeys;
-	private final ErrorParser errorParser;
+	private Tracer tracer;
+	private SpanNamer spanNamer;
+	private TraceKeys traceKeys;
+	private ErrorParser errorParser;
+
+	public TraceWebAspect() {
+	}
 
 	public TraceWebAspect(Tracer tracer, SpanNamer spanNamer, TraceKeys traceKeys,
 			ErrorParser errorParser) {
 		this.tracer = tracer;
 		this.spanNamer = spanNamer;
 		this.traceKeys = traceKeys;
+		this.errorParser = errorParser;
+	}
+
+	public void setTracer(Tracer tracer) {
+		this.tracer = tracer;
+	}
+
+	public void setSpanNamer(SpanNamer spanNamer) {
+		this.spanNamer = spanNamer;
+	}
+
+	public void setTraceKeys(TraceKeys traceKeys) {
+		this.traceKeys = traceKeys;
+	}
+
+	public void setErrorParser(ErrorParser errorParser) {
 		this.errorParser = errorParser;
 	}
 

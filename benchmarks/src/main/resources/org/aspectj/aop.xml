@@ -1,0 +1,14 @@
+<!DOCTYPE aspectj PUBLIC "-//AspectJ//DTD//EN" "http://www.eclipse.org/aspectj/dtd/aspectj.dtd">
+<aspectj>
+	<weaver>
+		<include within="org.springframework.cloud.sleuth.benchmarks..*" />
+		<include within="org.springframework.cloud.sleuth..*" />
+	</weaver>
+
+	<aspects>
+		<aspect name="org.springframework.cloud.sleuth.instrument.web.TraceWebAspect" />
+		<aspect name="org.springframework.cloud.sleuth.instrument.scheduling.TraceSchedulingAspect" />
+		<aspect name="org.springframework.cloud.sleuth.instrument.async.TraceAsyncAspect" />
+	</aspects>
+
+</aspectj>

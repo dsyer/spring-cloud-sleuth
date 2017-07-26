@@ -38,26 +38,44 @@ public class StartupBenchmark {
 	}
 
 	@Benchmark
-	public void withoutAnnotations(ApplicationState state) throws Exception {
-		state.setExtraArgs("--spring.sleuth.annotation.enabled=false");
+	public void withAspectJ(ApplicationState state) throws Exception {
+		state.setProgArgs("--spring.aop.auto=false");
+		state.setJvmArgs(
+				"-javaagent:" + home() + "/.m2/repository/org/aspectj/aspectjweaver/1.8.10/aspectjweaver-1.8.10.jar");
 		state.run();
 	}
-	
+
+	private String home() {
+		return System.getProperty("user.home");
+	}
+
+	@Benchmark
+	public void withoutAnnotations(ApplicationState state) throws Exception {
+		state.setProgArgs("--spring.sleuth.annotation.enabled=false");
+		state.run();
+	}
+
 	@Benchmark
 	public void withoutAsync(ApplicationState state) throws Exception {
-		state.setExtraArgs("--spring.sleuth.async.enabled=false", "--spring.sleuth.annotation.enabled=false");
+		state.setProgArgs("--spring.sleuth.async.enabled=false",
+				"--spring.sleuth.annotation.enabled=false");
 		state.run();
 	}
 
 	@Benchmark
 	public void withoutScheduled(ApplicationState state) throws Exception {
-		state.setExtraArgs("--spring.sleuth.scheduled.enabled=false", "--spring.sleuth.async.enabled=false", "--spring.sleuth.annotation.enabled=false");
+		state.setProgArgs("--spring.sleuth.scheduled.enabled=false",
+				"--spring.sleuth.async.enabled=false",
+				"--spring.sleuth.annotation.enabled=false");
 		state.run();
 	}
 
 	@Benchmark
 	public void withoutWeb(ApplicationState state) throws Exception {
-		state.setExtraArgs("--spring.sleuth.web.enabled=false", "--spring.sleuth.scheduled.enabled=false", "--spring.sleuth.async.enabled=false", "--spring.sleuth.annotation.enabled=false");
+		state.setProgArgs("--spring.sleuth.web.enabled=false",
+				"--spring.sleuth.scheduled.enabled=false",
+				"--spring.sleuth.async.enabled=false",
+				"--spring.sleuth.annotation.enabled=false");
 		state.run();
 	}
 

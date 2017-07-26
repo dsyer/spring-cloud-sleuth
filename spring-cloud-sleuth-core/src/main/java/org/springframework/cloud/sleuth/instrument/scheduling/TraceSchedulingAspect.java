@@ -28,9 +28,9 @@ import org.springframework.cloud.sleuth.util.SpanNameUtil;
 
 /**
  * Aspect that creates a new Span for running threads executing methods annotated with
- * {@link org.springframework.scheduling.annotation.Scheduled} annotation.
- * For every execution of scheduled method a new trace will be started. The name of the
- * span will be the simple name of the class annotated with
+ * {@link org.springframework.scheduling.annotation.Scheduled} annotation. For every
+ * execution of scheduled method a new trace will be started. The name of the span will be
+ * the simple name of the class annotated with
  * {@link org.springframework.scheduling.annotation.Scheduled}
  *
  * @author Tomasz Nurkewicz, 4financeIT
@@ -46,13 +46,29 @@ public class TraceSchedulingAspect {
 
 	private static final String SCHEDULED_COMPONENT = "scheduled";
 
-	private final Tracer tracer;
-	private final TraceKeys traceKeys;
-	private final Pattern skipPattern;
+	private Tracer tracer;
+	private TraceKeys traceKeys;
+	private Pattern skipPattern;
 
-	public TraceSchedulingAspect(Tracer tracer, TraceKeys traceKeys, Pattern skipPattern) {
+	public TraceSchedulingAspect() {
+	}
+
+	public TraceSchedulingAspect(Tracer tracer, TraceKeys traceKeys,
+			Pattern skipPattern) {
 		this.tracer = tracer;
 		this.traceKeys = traceKeys;
+		this.skipPattern = skipPattern;
+	}
+
+	public void setTracer(Tracer tracer) {
+		this.tracer = tracer;
+	}
+
+	public void setTraceKeys(TraceKeys traceKeys) {
+		this.traceKeys = traceKeys;
+	}
+
+	public void setSkipPattern(Pattern skipPattern) {
 		this.skipPattern = skipPattern;
 	}
 
@@ -64,10 +80,14 @@ public class TraceSchedulingAspect {
 		String spanName = SpanNameUtil.toLowerHyphen(pjp.getSignature().getName());
 		Span span = this.tracer.createSpan(spanName);
 		this.tracer.addTag(Span.SPAN_LOCAL_COMPONENT_TAG_NAME, SCHEDULED_COMPONENT);
-		this.tracer.addTag(this.traceKeys.getAsync().getPrefix() +
-				this.traceKeys.getAsync().getClassNameKey(), pjp.getTarget().getClass().getSimpleName());
-		this.tracer.addTag(this.traceKeys.getAsync().getPrefix() +
-				this.traceKeys.getAsync().getMethodNameKey(), pjp.getSignature().getName());
+		this.tracer.addTag(
+				this.traceKeys.getAsync().getPrefix()
+						+ this.traceKeys.getAsync().getClassNameKey(),
+				pjp.getTarget().getClass().getSimpleName());
+		this.tracer.addTag(
+				this.traceKeys.getAsync().getPrefix()
+						+ this.traceKeys.getAsync().getMethodNameKey(),
+				pjp.getSignature().getName());
 		try {
 			return pjp.proceed();
 		}

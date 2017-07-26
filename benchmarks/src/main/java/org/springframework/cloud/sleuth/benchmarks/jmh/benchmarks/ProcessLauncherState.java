@@ -24,10 +24,8 @@ import java.net.URL;
 import java.net.URLClassLoader;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collection;
 import java.util.List;
 
-import org.openjdk.jmh.util.FileUtils;
 import org.openjdk.jmh.util.Utils;
 
 import org.springframework.cloud.sleuth.benchmarks.app.SleuthBenchmarkingSpringApp;
@@ -36,7 +34,8 @@ public class ProcessLauncherState {
 
 	private Process started;
 	private List<String> args;
-	private List<String> extraArgs;
+	private List<String> progArgs;
+	private List<String> jvmArgs;
 	private File home;
 	private String mainClass = SleuthBenchmarkingSpringApp.class.getName();
 	private int length;
@@ -62,8 +61,12 @@ public class ProcessLauncherState {
 		this.mainClass = mainClass;
 	}
 
-	public void setExtraArgs(String... extraArgs) {
-		this.extraArgs = Arrays.asList(extraArgs);
+	public void setProgArgs(String... extraArgs) {
+		this.progArgs = Arrays.asList(extraArgs);
+	}
+
+	public void setJvmArgs(String... extraArgs) {
+		this.jvmArgs = Arrays.asList(extraArgs);
 	}
 
 	private String getClasspath() {
@@ -84,25 +87,14 @@ public class ProcessLauncherState {
 		}
 	}
 
-	public Collection<String> capture(String... additional) throws Exception {
-		List<String> args = new ArrayList<>(this.args);
-		args.addAll(Arrays.asList(additional));
-		ProcessBuilder builder = new ProcessBuilder(args);
-		builder.directory(home);
-		builder.redirectErrorStream(true);
-		customize(builder);
-		if (!"false".equals(System.getProperty("debug", "false"))) {
-			System.err.println("Running: " + Utils.join(args, " "));
-		}
-		started = builder.start();
-		return FileUtils.readAllLines(started.getInputStream());
-	}
-
 	public void run() throws Exception {
 		List<String> args = new ArrayList<>(this.args);
+		if (jvmArgs!=null) {
+			args.addAll(1, this.jvmArgs);
+		}
 		args.add(args.size() - this.length, this.mainClass);
-		if (extraArgs!=null) {
-			args.addAll(extraArgs);
+		if (progArgs!=null) {
+			args.addAll(progArgs);
 		}
 		ProcessBuilder builder = new ProcessBuilder(args);
 		builder.directory(home);

@@ -16,19 +16,21 @@
 
 package org.springframework.cloud.sleuth.instrument.async;
 
+import java.lang.reflect.Method;
+
 import org.aspectj.lang.ProceedingJoinPoint;
 import org.aspectj.lang.annotation.Around;
 import org.aspectj.lang.annotation.Aspect;
 import org.aspectj.lang.reflect.MethodSignature;
+
 import org.springframework.beans.factory.BeanFactory;
+import org.springframework.beans.factory.BeanFactoryAware;
 import org.springframework.cloud.sleuth.Span;
 import org.springframework.cloud.sleuth.SpanNamer;
 import org.springframework.cloud.sleuth.TraceKeys;
 import org.springframework.cloud.sleuth.Tracer;
 import org.springframework.cloud.sleuth.util.SpanNameUtil;
 import org.springframework.util.ReflectionUtils;
-
-import java.lang.reflect.Method;
 
 /**
  * Aspect that creates a new Span for running threads executing methods annotated with
@@ -40,19 +42,35 @@ import java.lang.reflect.Method;
  * @see Tracer
  */
 @Aspect
-public class TraceAsyncAspect {
+public class TraceAsyncAspect implements BeanFactoryAware {
 
 	private static final String ASYNC_COMPONENT = "async";
 
-	private final Tracer tracer;
-	private final TraceKeys traceKeys;
-	private final BeanFactory beanFactory;
+	private Tracer tracer;
+	private TraceKeys traceKeys;
+	private BeanFactory beanFactory;
 	private SpanNamer spanNamer;
+
+	public TraceAsyncAspect() {
+	}
 
 	public TraceAsyncAspect(Tracer tracer, TraceKeys traceKeys, BeanFactory beanFactory) {
 		this.tracer = tracer;
 		this.traceKeys = traceKeys;
 		this.beanFactory = beanFactory;
+	}
+	
+	@Override
+	public void setBeanFactory(BeanFactory beanFactory) {
+		this.beanFactory = beanFactory;
+	}
+
+	public void setTracer(Tracer tracer) {
+		this.tracer = tracer;
+	}
+
+	public void setTraceKeys(TraceKeys traceKeys) {
+		this.traceKeys = traceKeys;
 	}
 
 	@Around("execution (@org.springframework.scheduling.annotation.Async  * *.*(..))")
@@ -61,13 +79,18 @@ public class TraceAsyncAspect {
 				SpanNameUtil.toLowerHyphen(pjp.getSignature().getName()));
 		Span span = this.tracer.createSpan(spanName);
 		this.tracer.addTag(Span.SPAN_LOCAL_COMPONENT_TAG_NAME, ASYNC_COMPONENT);
-		this.tracer.addTag(this.traceKeys.getAsync().getPrefix() +
-				this.traceKeys.getAsync().getClassNameKey(), pjp.getTarget().getClass().getSimpleName());
-		this.tracer.addTag(this.traceKeys.getAsync().getPrefix() +
-				this.traceKeys.getAsync().getMethodNameKey(), pjp.getSignature().getName());
+		this.tracer.addTag(
+				this.traceKeys.getAsync().getPrefix()
+						+ this.traceKeys.getAsync().getClassNameKey(),
+				pjp.getTarget().getClass().getSimpleName());
+		this.tracer.addTag(
+				this.traceKeys.getAsync().getPrefix()
+						+ this.traceKeys.getAsync().getMethodNameKey(),
+				pjp.getSignature().getName());
 		try {
 			return pjp.proceed();
-		} finally {
+		}
+		finally {
 			this.tracer.close(span);
 		}
 	}
@@ -75,12 +98,12 @@ public class TraceAsyncAspect {
 	private Method getMethod(ProceedingJoinPoint pjp, Object object) {
 		MethodSignature signature = (MethodSignature) pjp.getSignature();
 		Method method = signature.getMethod();
-		return ReflectionUtils
-				.findMethod(object.getClass(), method.getName(), method.getParameterTypes());
+		return ReflectionUtils.findMethod(object.getClass(), method.getName(),
+				method.getParameterTypes());
 	}
 
 	SpanNamer spanNamer() {
-		if (this.spanNamer == null) {
+		if (this.spanNamer == null && this.beanFactory != null) {
 			this.spanNamer = this.beanFactory.getBean(SpanNamer.class);
 		}
 		return this.spanNamer;

@@ -16,6 +16,10 @@
 
 package org.springframework.cloud.sleuth.instrument.scheduling;
 
+import java.util.regex.Pattern;
+
+import org.aspectj.lang.Aspects;
+
 import org.springframework.boot.autoconfigure.AutoConfigureAfter;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
@@ -26,9 +30,6 @@ import org.springframework.cloud.sleuth.Tracer;
 import org.springframework.cloud.sleuth.autoconfig.TraceAutoConfiguration;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.context.annotation.EnableAspectJAutoProxy;
-
-import java.util.regex.Pattern;
 
 /**
  * Registers beans related to task scheduling.
@@ -40,7 +41,6 @@ import java.util.regex.Pattern;
  * @see TraceSchedulingAspect
  */
 @Configuration
-@EnableAspectJAutoProxy
 @ConditionalOnProperty(value = "spring.sleuth.scheduled.enabled", matchIfMissing = true)
 @ConditionalOnBean(Tracer.class)
 @AutoConfigureAfter(TraceAutoConfiguration.class)
@@ -51,6 +51,14 @@ public class TraceSchedulingAutoConfiguration {
 	@Bean
 	public TraceSchedulingAspect traceSchedulingAspect(Tracer tracer, TraceKeys traceKeys,
 			SleuthSchedulingProperties sleuthSchedulingProperties) {
-		return new TraceSchedulingAspect(tracer, traceKeys, Pattern.compile(sleuthSchedulingProperties.getSkipPattern()));
+		Pattern pattern = Pattern.compile(sleuthSchedulingProperties.getSkipPattern());
+		if (!Aspects.hasAspect(TraceSchedulingAspect.class)) {
+			return new TraceSchedulingAspect(tracer, traceKeys, pattern);
+		}
+		TraceSchedulingAspect aspect = Aspects.aspectOf(TraceSchedulingAspect.class);
+		aspect.setTraceKeys(traceKeys);
+		aspect.setTracer(tracer);
+		aspect.setSkipPattern(pattern);
+		return aspect;
 	}
 }

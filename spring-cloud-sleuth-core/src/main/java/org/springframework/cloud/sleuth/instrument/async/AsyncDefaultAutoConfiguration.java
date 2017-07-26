@@ -18,6 +18,8 @@ package org.springframework.cloud.sleuth.instrument.async;
 
 import java.util.concurrent.Executor;
 
+import org.aspectj.lang.Aspects;
+
 import org.springframework.beans.factory.BeanFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.AutoConfigureAfter;
@@ -34,8 +36,8 @@ import org.springframework.scheduling.annotation.AsyncConfigurerSupport;
 import org.springframework.scheduling.annotation.EnableAsync;
 
 /**
- * {@link org.springframework.boot.autoconfigure.EnableAutoConfiguration Auto-configuration}
- * enabling async related processing.
+ * {@link org.springframework.boot.autoconfigure.EnableAutoConfiguration
+ * Auto-configuration} enabling async related processing.
  *
  * @author Dave Syer
  * @author Marcin Grzejszczak
@@ -51,14 +53,16 @@ import org.springframework.scheduling.annotation.EnableAsync;
 @AutoConfigureAfter(AsyncCustomAutoConfiguration.class)
 public class AsyncDefaultAutoConfiguration {
 
-	@Autowired private BeanFactory beanFactory;
+	@Autowired
+	private BeanFactory beanFactory;
 
 	@Configuration
 	@ConditionalOnMissingBean(AsyncConfigurer.class)
 	@ConditionalOnProperty(value = "spring.sleuth.async.configurer.enabled", matchIfMissing = true)
 	static class DefaultAsyncConfigurerSupport extends AsyncConfigurerSupport {
 
-		@Autowired private BeanFactory beanFactory;
+		@Autowired
+		private BeanFactory beanFactory;
 
 		@Override
 		public Executor getAsyncExecutor() {
@@ -67,8 +71,14 @@ public class AsyncDefaultAutoConfiguration {
 	}
 
 	@Bean
-	public TraceAsyncAspect traceAsyncAspect(Tracer tracer, TraceKeys traceKeys) {
-		return new TraceAsyncAspect(tracer, traceKeys, this.beanFactory);
+	public TraceAsyncAspect traceAsyncAspect(Tracer tracer, TraceKeys traceKeys, BeanFactory beanFactory) {
+		if (!Aspects.hasAspect(TraceAsyncAspect.class)) {
+			return new TraceAsyncAspect(tracer, traceKeys, beanFactory);
+		}
+		TraceAsyncAspect aspect = Aspects.aspectOf(TraceAsyncAspect.class);
+		aspect.setTraceKeys(traceKeys);
+		aspect.setTracer(tracer);
+		return aspect;
 	}
 
 	@Bean

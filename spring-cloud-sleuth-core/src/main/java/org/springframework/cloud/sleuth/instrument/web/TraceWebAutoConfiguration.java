@@ -17,6 +17,8 @@ package org.springframework.cloud.sleuth.instrument.web;
 
 import java.util.regex.Pattern;
 
+import org.aspectj.lang.Aspects;
+
 import org.springframework.beans.factory.BeanFactory;
 import org.springframework.boot.actuate.autoconfigure.ManagementServerProperties;
 import org.springframework.boot.autoconfigure.AutoConfigureAfter;
@@ -74,7 +76,15 @@ public class TraceWebAutoConfiguration {
 	@Bean
 	public TraceWebAspect traceWebAspect(Tracer tracer, TraceKeys traceKeys,
 			SpanNamer spanNamer, ErrorParser errorParser) {
-		return new TraceWebAspect(tracer, spanNamer, traceKeys, errorParser);
+		if (!Aspects.hasAspect(TraceWebAspect.class)) {
+			return new TraceWebAspect(tracer, spanNamer, traceKeys, errorParser);
+		}
+		TraceWebAspect aspect = Aspects.aspectOf(TraceWebAspect.class);
+		aspect.setTraceKeys(traceKeys);
+		aspect.setSpanNamer(spanNamer);
+		aspect.setTracer(tracer);
+		aspect.setErrorParser(errorParser);
+		return aspect;
 	}
 
 	@Bean

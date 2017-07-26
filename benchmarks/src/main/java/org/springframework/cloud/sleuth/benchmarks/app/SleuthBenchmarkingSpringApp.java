@@ -26,6 +26,8 @@ import javax.annotation.PreDestroy;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+
+import org.springframework.beans.factory.BeanFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.SpringApplication;
@@ -39,10 +41,9 @@ import org.springframework.cloud.sleuth.Tracer;
 import org.springframework.cloud.sleuth.annotation.ContinueSpan;
 import org.springframework.cloud.sleuth.annotation.NewSpan;
 import org.springframework.cloud.sleuth.annotation.SpanTag;
+import org.springframework.cloud.sleuth.instrument.async.TraceableExecutorService;
 import org.springframework.cloud.sleuth.sampler.AlwaysSampler;
-import org.springframework.cloud.sleuth.util.ArrayListSpanAccumulator;
 import org.springframework.context.ApplicationListener;
-import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.context.annotation.Bean;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.scheduling.annotation.EnableAsync;
@@ -61,9 +62,13 @@ public class SleuthBenchmarkingSpringApp implements
 
 	private static final Log log = LogFactory.getLog(SleuthBenchmarkingSpringApp.class);
 
-	public final ExecutorService pool = Executors.newWorkStealingPool();
+	public final ExecutorService pool;
 
 	public int port;
+	
+	public SleuthBenchmarkingSpringApp(BeanFactory beanFactory) {
+		this.pool = new TraceableExecutorService(beanFactory, Executors.newWorkStealingPool());
+	}
 
 	@Autowired(required = false) Tracer tracer;
 	@Autowired AClass aClass;
@@ -80,12 +85,16 @@ public class SleuthBenchmarkingSpringApp implements
 
 	@RequestMapping("/async")
 	public String asyncHttp() throws ExecutionException, InterruptedException {
+		log.info("Called async http");
 		return this.async().get();
 	}
 
 	@Async
 	public Future<String> async() {
-		return this.pool.submit(() -> "async");
+		return this.pool.submit(() -> {
+			log.info("Called async");
+			return "async";
+		});
 	}
 
 	public String manualSpan() {
@@ -103,8 +112,9 @@ public class SleuthBenchmarkingSpringApp implements
 
 	@Bean
 	public EmbeddedServletContainerFactory servletContainer(@Value("${server.port:0}") int serverPort) {
+		serverPort = serverPort == 0 ? SocketUtils.findAvailableTcpPort() : serverPort;
 		log.info("Starting container at port [" + serverPort + "]");
-		return new TomcatEmbeddedServletContainerFactory(serverPort == 0 ? SocketUtils.findAvailableTcpPort() : serverPort);
+		return new TomcatEmbeddedServletContainerFactory(serverPort);
 	}
 
 	@PreDestroy
