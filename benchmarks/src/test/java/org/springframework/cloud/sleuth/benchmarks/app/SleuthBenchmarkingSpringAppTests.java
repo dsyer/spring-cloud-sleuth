@@ -12,7 +12,7 @@ import org.springframework.test.context.junit4.SpringRunner;
 import static org.assertj.core.api.Assertions.assertThat;
 
 @RunWith(SpringRunner.class)
-@SpringBootTest(properties={"logging.level.org.springframework.aop=TRACE", "spring.aop.auto=false"}, webEnvironment=WebEnvironment.RANDOM_PORT)
+@SpringBootTest(properties={"logging.level.org.springframework.cloud.sleuth=TRACE"}, webEnvironment=WebEnvironment.RANDOM_PORT)
 public class SleuthBenchmarkingSpringAppTests {
 	
 	@Autowired
