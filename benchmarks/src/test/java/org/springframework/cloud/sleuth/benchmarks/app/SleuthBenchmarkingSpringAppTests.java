@@ -19,7 +19,15 @@ public class SleuthBenchmarkingSpringAppTests {
 	private SleuthBenchmarkingSpringApp app;
 
 	@Autowired
+	private AppService service;
+
+	@Autowired
 	private TestRestTemplate rest;
+
+	@Test
+	public void service() throws Exception {
+		assertThat(service.async().get()).isEqualTo("async");
+	}
 
 	@Test
 	public void direct() throws Exception {
