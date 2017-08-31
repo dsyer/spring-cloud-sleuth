@@ -29,7 +29,9 @@ import org.openjdk.jmh.annotations.State;
 import org.openjdk.jmh.annotations.TearDown;
 import org.openjdk.jmh.annotations.Threads;
 import org.openjdk.jmh.annotations.Warmup;
+
 import org.springframework.boot.SpringApplication;
+import org.springframework.cloud.sleuth.benchmarks.app.AppService;
 import org.springframework.cloud.sleuth.benchmarks.app.SleuthBenchmarkingSpringApp;
 import org.springframework.context.ConfigurableApplicationContext;
 
@@ -47,8 +49,8 @@ public class AsyncBenchmarks {
 	public static class BenchmarkContext {
 		volatile ConfigurableApplicationContext withSleuth;
 		volatile ConfigurableApplicationContext withoutSleuth;
-		volatile SleuthBenchmarkingSpringApp tracedAsyncMethodHavingBean;
-		volatile SleuthBenchmarkingSpringApp untracedAsyncMethodHavingBean;
+		volatile AppService tracedAsyncMethodHavingBean;
+		volatile AppService untracedAsyncMethodHavingBean;
 
 		@Setup public void setup() {
 			this.withSleuth = new SpringApplication(
@@ -62,14 +64,12 @@ public class AsyncBenchmarks {
 							"--spring.sleuth.enabled=false",
 							"--spring.sleuth.async.enabled=false");
 			this.tracedAsyncMethodHavingBean = this.withSleuth.getBean(
-					SleuthBenchmarkingSpringApp.class);
+					AppService.class);
 			this.untracedAsyncMethodHavingBean = this.withoutSleuth.getBean(
-					SleuthBenchmarkingSpringApp.class);
+					AppService.class);
 		}
 
 		@TearDown public void clean() {
-			this.tracedAsyncMethodHavingBean.clean();
-			this.untracedAsyncMethodHavingBean.clean();
 			this.withSleuth.close();
 			this.withoutSleuth.close();
 		}

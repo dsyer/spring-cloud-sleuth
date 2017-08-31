@@ -20,7 +20,6 @@ import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import java.util.concurrent.Future;
 
 import javax.annotation.PreDestroy;
 
@@ -45,7 +44,6 @@ import org.springframework.cloud.sleuth.instrument.async.TraceableExecutorServic
 import org.springframework.cloud.sleuth.sampler.AlwaysSampler;
 import org.springframework.context.ApplicationListener;
 import org.springframework.context.annotation.Bean;
-import org.springframework.scheduling.annotation.Async;
 import org.springframework.scheduling.annotation.EnableAsync;
 import org.springframework.util.SocketUtils;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -72,6 +70,7 @@ public class SleuthBenchmarkingSpringApp implements
 
 	@Autowired(required = false) Tracer tracer;
 	@Autowired AClass aClass;
+	@Autowired AppService service;
 
 	@RequestMapping("/foo")
 	public String foo() {
@@ -86,15 +85,7 @@ public class SleuthBenchmarkingSpringApp implements
 	@RequestMapping("/async")
 	public String asyncHttp() throws ExecutionException, InterruptedException {
 		log.info("Called async http");
-		return this.async().get();
-	}
-
-	@Async
-	public Future<String> async() {
-		return this.pool.submit(() -> {
-			log.info("Called async");
-			return "async";
-		});
+		return this.service.async().get();
 	}
 
 	public String manualSpan() {
