@@ -119,7 +119,7 @@ public class TraceChannelInterceptor extends AbstractTraceChannelInterceptor {
 		return new GenericMessage<>(message.getPayload(), headers.getMessageHeaders());
 	}
 
-	private Message getMessage(Message<?> message) {
+	private Message<?> getMessage(Message<?> message) {
 		Object payload = message.getPayload();
 		if (payload instanceof MessagingException) {
 			MessagingException e = (MessagingException) payload;
