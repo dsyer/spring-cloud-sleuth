@@ -25,6 +25,7 @@ import org.springframework.messaging.Message;
 import org.springframework.messaging.support.MessageBuilder;
 import org.springframework.messaging.support.MessageHeaderAccessor;
 import org.springframework.messaging.support.NativeMessageHeaderAccessor;
+import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
 import org.springframework.util.StringUtils;
 
@@ -65,8 +66,18 @@ class MessagingTextMap implements SpanTextMap {
 		if (accessor instanceof NativeMessageHeaderAccessor) {
 			NativeMessageHeaderAccessor nativeAccessor = (NativeMessageHeaderAccessor) accessor;
 			nativeAccessor.setNativeHeader(key, value);
-		} else if (accessor.getHeader(NativeMessageHeaderAccessor.NATIVE_HEADERS)!=null) {
-			MultiValueMap<String,String> map = (MultiValueMap<String, String>) accessor.getHeader(NativeMessageHeaderAccessor.NATIVE_HEADERS);
+		}
+		else if (accessor.getHeader(NativeMessageHeaderAccessor.NATIVE_HEADERS) != null) {
+			if (accessor.getHeader(
+					NativeMessageHeaderAccessor.NATIVE_HEADERS) instanceof MultiValueMap) {
+				MultiValueMap<String, String> map = (MultiValueMap<String, String>) accessor
+						.getHeader(NativeMessageHeaderAccessor.NATIVE_HEADERS);
+				map.add(key, value);
+			}
+		}
+		else {
+			MultiValueMap<String, String> map = new LinkedMultiValueMap<>();
+			accessor.setHeader(NativeMessageHeaderAccessor.NATIVE_HEADERS, map);
 			map.add(key, value);
 		}
 		this.delegate.copyHeaders(accessor.toMessageHeaders());
